@@ -1,0 +1,4 @@
+Change in Game Concept - run away trying to make the objects run into walls to be destroyed
+			- PLayer is destroyed if they touch a wall or an enemy
+
+Create a State Manager for the enemies that will do the calculations for if the enemies should run/chase/arrive, based on their enemy type
