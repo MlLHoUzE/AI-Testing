@@ -229,21 +229,29 @@ public class SteeringManager{
             //if an intersection point has been detected, calculate a force that will direct the agent away
             if(closestWall >= 0)
             {
+
+                Debug.Log("Wall Detected");
                 //calculate by what distance the projected position of the agent will overshoot the wall
                 Vector3 overShoot = mFeelers[flr].position - closestPoint;
 
                 //create a force in the direction of the wall normal, with a magnitude of the overshoot
                 Vector3 wallNormal = calcWallNormal(walls[closestWall]);
 
-                //check that the wall normal is opposite the direction of the target
+                //check vertical or horizontal wall
 
-                if(wallNormal.z < 0 && (targetPos - host.transform.position).z < 0)
+                
+
+                if(wallNormal.x < 0 && (targetPos - host.transform.position).x < 0)
                 {
                     //flip normal
                     wallNormal *= -1;
                 }
+                else if(wallNormal.z < 0 && (targetPos - host.transform.position).z < 0)
+                    {
+                    wallNormal *= -1;
+                }
 
-                steeringForce = wallNormal /** overShoot.magnitude */* hostScript.getMaxVelocity();
+                steeringForce = wallNormal * overShoot.magnitude * hostScript.getMaxVelocity();
 
             }
         }//next feeler
@@ -268,57 +276,89 @@ public class SteeringManager{
 
     private bool LineIntersectionPoint(Vector3 ps1, Vector3 pe1, Vector3 ps2, Vector3 pe2, out Vector3 point, out float distToThisIP)
     {
-        Vector3 r = pe1 - ps1;
-        Vector3 s = pe2 - ps2;
+        //Vector3 r = pe1 - ps1;
+        //Vector3 s = pe2 - ps2;
 
-        float rxs = r.x * s.y - r.y * s.x;
-        float qpxr = (ps2 - ps1).x * r.y - (ps2 - ps1).y * r.x;
-        point = Vector3.zero;
-        distToThisIP = 0;
+        //float rxs = r.x * s.y - r.y * s.x;
+        //float qpxr = (ps2 - ps1).x * r.y - (ps2 - ps1).y * r.x;
+        //point = Vector3.zero;
+        //distToThisIP = 0;
 
-        //if r x s = 0 and (ps2-ps1) x r = 0, then the two lines are collinear.
-        if(rxs == 0 && qpxr == 0)
+        ////if r x s = 0 and (ps2-ps1) x r = 0, then the two lines are collinear.
+        //if (rxs == 0 && qpxr == 0)
+        //{
+        //    return false;
+        //}
+
+        //if (rxs == 0 && qpxr != 0)
+        //    return false;
+        //float t = ((ps2 - ps1).x * s.y - (ps2 - ps1).y * s.x) / rxs;
+        //float u = ((ps2 - ps1).x * r.y - (ps2 - ps1).y * r.x) / rxs;
+
+        //if (rxs != 0 && (0 <= t && t <= 1) && (0 <= u && u <= 1))
+        //{
+        //    point = ps1 + t * r;
+
+        //    return true;
+        //}
+        //return false;
+        //float a1 = pe1.z - ps1.z;
+        //float b1 = ps1.x - pe1.x;
+        //float c1 = a1 * ps1.x + b1 * ps1.z;
+
+        //float a2 = pe2.z - ps2.z;
+        //float b2 = ps2.x - pe2.x;
+        //float c2 = a2 * ps2.x + b2 * ps2.z;
+
+        //float delta = a1 * b2 - a2 * b1;
+
+        //point = new Vector3((b2 * c1 - b1 * c2) / delta, 0.5f, (a1 * c2 - a2 * c1) / delta);
+
+        //distToThisIP = (point - ps1).magnitude;
+
+        //if (delta == 0)
+        //    return false;
+
+
+
+        //return true;
+
+
+        Vector3 CmP = new Vector3(ps2.x - ps1.x, ps2.y - ps1.y, ps2.z - ps1.z);
+        Vector3 r2 = new Vector3(pe1.x - ps1.x, pe1.y - ps1.y, pe1.z - ps1.z);
+        Vector3 s2 = new Vector3(pe2.x - ps2.x, pe2.y - ps2.y, pe2.z - ps2.z);
+
+        float CmPxr2 = CmP.x * r2.z - CmP.z * r2.x;
+        float CmPxs2 = CmP.x * s2.z - CmP.z * s2.x;
+        float r2xs2 = r2.x * s2.z - r2.z * s2.x;
+
+        if (CmPxr2 == 0.0f)
         {
-            return false;
+            //lines are collinear
+            point = pe1;
+            distToThisIP = (point - ps1).magnitude;
+            return ((ps2.x - ps1.x < 0.0f) != (ps2.x - pe2.x < 0.0f)) || ((ps2.z - ps1.z < 0.0f) != (ps2.z - pe1.z < 0.0f));
         }
 
-        if (rxs == 0 && qpxr != 0)
-            return false;
-        float t = ((ps2 - ps1).x* s.y - (ps2- ps1).y * s.x) / rxs;
-        float u = ((ps2 - ps1).x * r.y - (ps2 - ps1).y * r.x) / rxs;
-
-        if(rxs != 0 && (0 <= t && t <= 1) && (0 <= u && u <= 1))
+        if (r2xs2 == 0.0f)
         {
-            point = ps1 + t * r;
-
-            return true;
+            point = new Vector3(0, 0, 0);
+            distToThisIP = -1;
+            return false; //lines are parallel
         }
-        return false;
-        float a1 = pe1.z - ps1.z;
-        float b1 = ps1.x - pe1.x;
-        float c1 = a1 * ps1.x + b1 * ps1.z;
 
-        float a2 = pe2.z - ps2.z;
-        float b2 = ps2.x - pe2.x;
-        float c2 = a2 * ps2.x + b2 * ps2.z;
 
-        float delta = a1 * b2 - a2 * b1;
-
-        point = new Vector3((b2 * c1 - b1 * c2) / delta, 0.5f, (a1 * c2 - a2 * c1) / delta);
-
+        float rxsr = 1.0f / r2xs2;
+        float t2 = CmPxs2 * rxsr;
+        float u2 = CmPxr2 * rxsr;
+        point = ps1 + t2 * pe1;
         distToThisIP = (point - ps1).magnitude;
-
-        if (delta == 0)
-            return false;
-
-        
-
-        return true;
+        return (t2 >= 0.0f) && (t2 <= 1.0f) && (u2 >= 0.0f) && (u2 <= 1.0f);
     }
 
     private Vector3 calcWallNormal(Collider wall)
     {
-        Vector3 a = wall.bounds.center;
+        Vector3 a = wall.bounds.min; 
         Vector3 b = new Vector3(wall.bounds.center.x + wall.bounds.extents.x, wall.bounds.center.y, wall.bounds.center.z);
         Vector3 c = new Vector3(wall.bounds.center.x, wall.bounds.center.y + wall.bounds.extents.y, wall.bounds.center.z);
 
